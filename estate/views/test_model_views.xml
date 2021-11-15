@@ -1,0 +1,47 @@
+<odoo>
+    <data>
+
+
+        <record id="test_model_tree_view" model="ir.ui.view">
+            <field name="name">test.model.tree</field>
+            <field name="model">test.model</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="last_seen"/>
+                </tree>
+
+            </field>
+        </record>
+
+        <record id="test_model_from_view" model="ir.ui.view">
+            <field name="name">test.action.form</field>
+            <field name="model">test.model</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <notebook>
+                                <page string="Description">
+                                    <field name="last_seen"/>
+                                </page>
+                            </notebook>
+                        </group>
+                    </sheet>
+                </form>
+
+            </field>
+        </record>
+
+
+        <record id="test_model_action" model="ir.actions.act_window">
+            <field name="name">Test action</field>
+            <field name="res_model">test.model</field>
+            <field name="view_mode">form,tree</field>
+        </record>
+
+    </data>
+</odoo>
+
+

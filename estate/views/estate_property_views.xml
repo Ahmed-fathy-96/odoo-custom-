@@ -1,0 +1,125 @@
+<odoo>
+    <data>
+        <record id="estate_property_action" model="ir.actions.act_window">
+            <field name="name">Estate property</field>
+            <field name="res_model">estate.property</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+        <record id="estate_property_view_tree" model="ir.ui.view">
+            <field name="name">estate.property.tree</field>
+            <field name="model">estate.property</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="postcode"/>
+                    <field name="bedrooms"/>
+                    <field name="living_area"/>
+                    <field name="expected_price"/>
+                    <field name="selling_price"/>
+                    <field name="date_availability"/>
+                </tree>
+            </field>
+        </record>
+        <record id="estate_property_view_search" model="ir.ui.view">
+            <field name="name">estate.property.view.search</field>
+            <field name="model">estate.property</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="name"/>
+                    <field name="postcode"/>
+                    <field name="expected_price"/>
+                    <field name="bedrooms"/>
+                    <field name="living_area"/>
+                    <field name="facades"/>
+                    <filter string="All" name="active" domain="['|',('active', '=', True), ('active', '=', False)]"/>
+                    <filter string="Available" name="active" domain="[('active', '=', True)]"/>
+                    <filter string="Not Available" name="not_active" domain="[('active', '=', False)]"/>
+                    <filter string="State: new | Offer received " name="State"
+                            domain="['|', ('state', '=', 'New'), ('state', '=', 'Offer Received')]"/>
+                    <group expand="1" string="Group By">
+                        <filter name="postcode" context="{'group_by':'postcode'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="estate_property_offers_view" model="ir.ui.view">
+            <field name="name">estate.property.offer</field>
+            <field name="model">estate.property.offer</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="price"/>
+                    <field name="partner_id"/>
+                    <button name="action_accepted_offer" type="object"  icon="fa-check"/>
+                    <button name="action_refused_offer" type="object" class="text_danger" icon="fa-times"/>
+                    <field name="status"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="estate_property_view_from" model="ir.ui.view">
+            <field name="name">estate.property.from</field>
+            <field name="model">estate.property</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <button name="sold_fun" type="object" string="Sold"/>
+                        <button name="cancel_fun" type="object" string="Cancel"/>
+                    </header>
+                    <sheet>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                        <field name="tag_ids" widget="many2many_tags"/>
+                        <group>
+                            <group>
+                                <field name="state"/>
+                                <field name="postcode"/>
+                                <field name="date_availability"/>
+                            </group>
+                            <group>
+                                <field name="expected_price"/>
+                                <field name="selling_price"/>
+                                <field name="best_price"/>
+
+                            </group>
+                            <notebook>
+                                <page string="Description">
+                                    <group>
+
+                                        <field name="description"/>
+                                        <field name="bedrooms"/>
+                                        <field name="living_area"/>
+                                        <field name="facades"/>
+                                        <field name="garage"/>
+                                        <field name="garden"/>
+                                        <field name="garden_area"/>
+                                        <field name="total_area"/>
+
+                                        <field name="garden_orientation"/>
+                                        <field name="active"/>
+                                    </group>
+                                </page>
+                                <page string="Offers">
+                                    <field name="offer_ids"/>
+
+                                </page>
+                                <page string="Other Info">
+                                    <group>
+                                        <field name="buyer_id"/>
+                                        <field name="sales_person"/>
+                                    </group>
+
+                                </page>
+
+                            </notebook>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+    </data>
+</odoo>
+
