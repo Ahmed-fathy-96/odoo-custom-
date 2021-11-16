@@ -3,7 +3,6 @@
     'summary': 'training model Purchase Request',
     'depends': [
         'purchase',
-        # 'product'
     ],
     'data': [
         'security/ir.model.access.csv',

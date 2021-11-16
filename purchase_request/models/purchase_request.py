@@ -65,5 +65,3 @@ class PurchaseRequestLine(models.Model):
     def _onchange_product(self):
         self.cost_price = self.product_id.lst_price
         self.total = self.quantity * self.cost_price
-
-
