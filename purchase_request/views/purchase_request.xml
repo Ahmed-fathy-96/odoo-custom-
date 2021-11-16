@@ -1,0 +1,82 @@
+<odoo>
+
+    <record id="purchase_request_action" model="ir.actions.act_window">
+        <field name="name">purchase.request</field>
+        <field name="res_model">purchase.request</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="purchase_request_from_view" model="ir.ui.view">
+        <field name="name">purchase.request.from</field>
+        <field name="model">purchase.request</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button string="Submit for Approval"
+                            class="btn-success"
+                            name="submit_to_Approved_action" type="object"
+                            attrs="{'invisible':[('state', '!=', 'draft')]}"/>
+                    <button string="Cancel"
+                            class="btn-danger"
+                            name="cancel_action" type="object"
+                            context="{'make_form_readonly' : True}"
+                            attrs="{'invisible': [('state', '!=', 'draft')]}"/>
+                    <button string="Approve"
+                            class="btn-success"
+                            name="approve_action" type="object"
+                            context="{'make_form_readonly' : True}"
+                            attrs="{'invisible':[ ('state', '!=', 'to_be_approved')]}"/>
+                    <button string="Reject"
+                            name="%(purchase_request.reject_request_wizard)d"
+                            class="btn-danger"
+                            context="{'make_form_readonly' : True}"
+                            type="action"
+                            attrs="{'invisible':[ ('state', '!=', 'to_be_approved')]}"/>
+                    <button string="Reset to draft"
+                            class="btn-warning"
+                            name="reset_action" type="object"
+                            attrs="{'invisible': [('state', '!=', 'cancel')]}"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <h1>
+                        <field name="name" attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
+                    </h1>
+                    <group>
+                        <group>
+                            <field name="user_id"
+                                   attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
+                            <field name="start_date"
+                                   attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
+                            <field name="end_date"
+                                   attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
+                        </group>
+                        <group>
+
+                            <field name="rejection_reason"
+                                   attrs="{'invisible':[ ('state', '!=', 'reject') ], 'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
+
+                        </group>
+                        <notebook>
+                            <page string="Orders">
+                                <field name="order_lines"
+                                       attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}">
+                                    <tree>
+                                        <field name="product_id" />
+                                        <field name="description"/>
+                                        <field name="quantity"/>
+                                        <field name="cost_price"/>
+                                        <field name="total"/>
+                                    </tree>
+                                </field>
+                                <group>
+                                    <field name="total_price"
+                                           attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
+                                </group>
+                            </page>
+                        </notebook>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
