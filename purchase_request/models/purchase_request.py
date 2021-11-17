@@ -34,10 +34,14 @@ class PurchaseRequest(models.Model):
         self.write({'state': 'cancel'})
 
     def approve_action(self):
-        self.write({'state': 'approve'})
         template_id = self.env.ref('purchase_request.approve_purchase_email_template').id
         template = self.env['mail.template'].browse(template_id)
+        users = self.env['res.groups'].search([('category_id', '=', 19)]).users
+        for u in users:
+            if u.id != self._uid:
+                template.write({'email_to': u.id})
         template.send_mail(self.id, force_send=True)
+        self.write({'state': 'approve'})
 
     def confirm_reject(self):
         self.write({'state': 'reject'})
