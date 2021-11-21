@@ -1,8 +1,9 @@
 <odoo>
     <data>
-        <menuitem id="root_purchase_requests_menu" name="Purchase Requests"/>
-        <menuitem id="purchase_request_menu_action" name="Purchase" parent="root_purchase_requests_menu" action="purchase_request_action"/>
-        <menuitem id="purchase_requests_order_menu_action" name="Orders" parent="purchase_request_menu_action"  />
+        <menuitem id="root_purchase_requests_menu" name="Purchase Requests">
+            <menuitem id="purchase_request_menu_action" name="Requests"  action="purchase_request_action"/>
+            <menuitem id="purchase_order_menu_action" name="Orders" action="purchase_order_action" />
+        </menuitem>
 
     </data>
 </odoo>

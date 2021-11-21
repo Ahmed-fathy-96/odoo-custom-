@@ -9,6 +9,7 @@
         'wizards/reject_purchase_request.xml',
         'data/mail_template.xml',
         'views/purchase_request.xml',
+        'views/purchase_order.xml',
         'views/menus.xml',
     ],
 }

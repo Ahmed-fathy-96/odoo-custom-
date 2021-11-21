@@ -5,7 +5,7 @@ class RejectPurchaseRequest(models.TransientModel):
     _name = "reject.purchase.request"
     _description = "reject purchase request model"
 
-    rejection_reason = fields.Text(requried=True)
+    rejection_reason = fields.Text()
 
     def reject_confirm_action(self):
         req_id = self._context.get('active_id')
