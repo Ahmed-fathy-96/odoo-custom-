@@ -1,0 +1,27 @@
+<odoo>
+    <data>
+<!--        <report id="purchase_request_report"-->
+<!--                name="purchase_request.purchase_request_report_template"-->
+<!--                model="purchase.request"-->
+<!--                string="Request Report"-->
+<!--                report_type="qweb-pdf"-->
+<!--                />-->
+
+<!--        <record id="purchase_request_report" model="ir.actions.report">-->
+<!--            <field name="name">Request Report</field>-->
+<!--            <field name="model">purchase.request</field>-->
+<!--            <field name="report_type">qweb-pdf</field>-->
+<!--            <field name="report_name">purchase_request.purchase_request_report_template</field>-->
+<!--            <field name="report_file">purchase_request.purchase_request_report_template</field>-->
+<!--        </record>-->
+
+        <record id="purchase_request_report" model="ir.actions.report">
+            <field name="name">Request Report</field>
+            <field name="model">purchase.request</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">purchase_request.purchase_request_report_template</field>
+            <field name="report_file">purchase_request.purchase_request_report_template</field>
+            <field name="binding_type">report</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,81 @@
+<odoo>
+    <data>
+        <template id="purchase_request_report_template">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="o">
+                    <t t-call="web.external_layout" t-lang="en_US">
+                        <div class="page p-2">
+                            <div class="row">
+<!--                                <span t-row="o.company_id.logo"/>-->
+<!--                                    <img t-attf-src="data:image/*;base64,{{o.company_id.logo}}"-->
+<!--                                        t-att-alt="o.company_id.name"-->
+<!--                                         />-->
+                                <p><b>Name:</b> <span t-field="o.name"/> </p>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+<!--                                    <h1 class="text-danger">Patient Status Report</h1>-->
+<!--                                    <p><b>Name:</b> <span t-field="o.first_name"/> <span t-field="o.Last_name"/> </p>-->
+<!--                                    <p><b>Age:</b> <span t-field="o.age"/> </p>-->
+<!--                                    <p><b>Department:</b> <span t-field="o.departments_id.name"/></p>-->
+<!--                                    <p><b>Doctors:</b>-->
+<!--                                         <t t-foreach="o.doctors" t-as="doctor">-->
+<!--                                            <span t-field="doctor.first_name"/> ,-->
+<!--                                        </t>-->
+<!--                                    </p>-->
+                                </div>
+
+                                <div class="col-6">
+<!--                                    <span t-row="o.image"/>-->
+<!--                                    <img t-attf-src="data:image/*;base64,{{o.image}}"-->
+<!--                                        t-att-alt="o.first_name"-->
+<!--                                        class="rounded mx-auto d-block " />-->
+
+<!--                                    <p><b>Birth date:</b> <span t-field="o.birth_date"/> </p>-->
+<!--                                    <p><b>PCR:</b> <span t-field="o.pcr"/> </p>-->
+<!--                                    <p><b>Blood Type:</b> <span t-field="o.blood_type"/></p>-->
+<!--                                    <p><b>Email:</b>  <span t-field="o.email"/></p>-->
+                                    
+                                </div>
+                            </div>
+<!--                            <div class="row">-->
+<!--                                <h3 class="text-center text-danger">log History</h3>-->
+<!--                                <table class="table table-striped table-sm">-->
+<!--                                    <thead>-->
+<!--                                        <tr>-->
+<!--                                            <th scope="col">User</th>-->
+<!--                                            <th scope="col">Date</th>-->
+<!--                                            <th scope="col">info</th>-->
+<!--                                        </tr>-->
+<!--                                    </thead>-->
+<!--                                    <tbody>-->
+
+<!--                                        <tr>-->
+<!--                                            <td scope="row"></td>-->
+<!--                                            <td></td>-->
+<!--                                            <td></td>-->
+<!--                                        </tr>-->
+<!--                                         <tr>-->
+<!--                                            <td scope="row"></td>-->
+<!--                                            <td></td>-->
+<!--                                            <td></td>-->
+<!--                                        </tr>-->
+<!--                                         <tr>-->
+<!--                                            <td scope="row"></td>-->
+<!--                                            <td></td>-->
+<!--                                            <td></td>-->
+<!--                                        </tr>-->
+<!--                                       -->
+<!--                                        -->
+<!--                                    </tbody>-->
+<!--                                </table>-->
+<!--                            </div>-->
+                            
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </template>
+    </data>
+</odoo>
+

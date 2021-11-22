@@ -1,11 +1,25 @@
 <odoo>
 
     <record id="purchase_request_action" model="ir.actions.act_window">
-        <field name="name">purchase.request</field>
+        <field name="name">Purchase Request</field>
         <field name="res_model">purchase.request</field>
         <field name="view_mode">tree,form</field>
     </record>
 
+    <record id="seq_request_purchase_name" model="ir.sequence">
+        <field name="name">Rec name </field>
+        <field name="code">purchase.request.name.sequence</field>
+        <field name="prefix">P</field>
+        <field name="padding">3</field>
+        <field name="company_id" eval="False"></field>
+    </record>
+    <record id="seq_order_purchase_name" model="ir.sequence">
+        <field name="name">Rec name</field>
+        <field name="code">purchase.order.name.sequence</field>
+        <field name="prefix">P</field>
+        <field name="padding">3</field>
+        <field name="company_id" eval="False"></field>
+    </record>
 
     <record id="purchase_request_from_view" model="ir.ui.view">
         <field name="name">purchase.request.from</field>
@@ -29,7 +43,9 @@
                             class="btn-primary"
                             name="create_purchase_order_action"
                             type="object"
-                            attrs="{'invisible':[ ('state', 'not in', ('cancel', 'reject', 'approve'))]}"/>
+                            attrs="{'invisible':['|', ('state', 'not in', ('cancel', 'reject', 'approve')), ('out_of_stock', '=', True)]}"/>
+                    <field name="out_of_stock" invisible="1"/>
+
                     <button string="Reject"
                             name="%(purchase_request.reject_request_wizard)d"
                             class="btn-danger"
@@ -42,21 +58,22 @@
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
-
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="orders_smart_button" string="Orders"
+                                icon="fa-calendar">
+                        </button>
+                    </div>
                     <h1>
                         <field name="name" attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
                     </h1>
-                    <div class="oe_button_box" name="button_box" >
-                        <button class="oe_stat_button" type="object" name="orders_smart_button" string="Orders"
-                                icon="fa-calendar" >
-                        </button>
-                    </div>
+
                     <group>
                         <group>
                             <field name="user_id"
                                    attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
                             <field name="partner_id"
                                    attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
+                            <field name="company_id"/>
                         </group>
                         <group>
                             <field name="start_date"
