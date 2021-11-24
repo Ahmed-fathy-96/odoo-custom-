@@ -1,11 +1,11 @@
 <odoo>
     <data>
-                <report id="purchase_request_report"
-                        name="purchase_request.purchase_request_report_template"
-                        model="purchase.request"
-                        string="Request Report"
-                        report_type="qweb-pdf"
-                        />
+        <report id="purchase_request_report"
+                name="purchase_request.purchase_request_report_template"
+                model="purchase.request"
+                string="Request Report"
+                report_type="qweb-pdf"
+        />
 
     </data>
 </odoo>

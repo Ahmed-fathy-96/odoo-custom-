@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 
@@ -14,7 +14,7 @@ class PurchaseRequest(models.Model):
     rejection_reason = fields.Text()
     order_lines = fields.One2many('purchase.request.line', 'request_id', )
     order_ids = fields.One2many('purchase.order', 'request_id')
-    total_price = fields.Float(compute="_compute_total_price")
+    total_price = fields.Float(compute="_compute_total_price", store=True)
     state = fields.Selection(
         default='draft',
         string="Status",
@@ -133,10 +133,20 @@ class PurchaseRequest(models.Model):
             'domain': [('request_id', '=', self.id)],
         }
 
+    def bills_smart_button(self):
+        return {
+            'name': 'Bills',
+            'type': 'ir.actions.act_window',
+            'res_model': 'account.move',
+            'view_id': False,
+            'view_mode': 'tree,form',
+            'domain': [],
+        }
+
     @api.model
     def create(self, vals):
         if vals.get('name', 'New') == 'New':
-            vals['name'] = self.env['ir.sequence'].next_by_code('purchase.request.name.sequence') or '/'
+            vals['name'] = self.env['ir.sequence'].next_by_code('purchase.request.name.sequence') or 'Pr'
         return super(PurchaseRequest, self).create(vals)
 
 
@@ -164,3 +174,29 @@ class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
 
     request_id = fields.Many2one('purchase.request')
+
+class PurchaseOrderLine(models.Model):
+    _inherit = 'purchase.order.line'
+
+    discount = fields.Float(string='Discount (%)')
+
+    @api.depends('product_qty', 'price_unit', 'taxes_id', 'discount')
+    def _compute_amount(self):
+        for line in self:
+            vals = line._prepare_compute_all_values()
+            taxes = line.taxes_id.compute_all(
+                vals['price_unit'],
+                vals['currency_id'],
+                vals['product_qty'],
+                vals['product'],
+                vals['partner'])
+            line.update({
+                'price_tax': sum(t.get('amount', 0.0) for t in taxes.get('taxes', [])),
+                'price_total': taxes['total_included'] - line.discount * taxes['total_included'],
+                'price_subtotal': taxes['total_excluded'] - line.discount * taxes['total_excluded'],
+            })
+
+    def _prepare_account_move_line(self, move=False):
+        res = super(PurchaseOrderLine, self)._prepare_account_move_line()
+        res['discount'] = self.discount
+        return res

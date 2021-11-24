@@ -3,11 +3,11 @@
     <record id="purchase_request_action" model="ir.actions.act_window">
         <field name="name">Purchase Request</field>
         <field name="res_model">purchase.request</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">kanban,tree,form,pivot</field>
     </record>
 
     <record id="seq_request_purchase_name" model="ir.sequence">
-        <field name="name">Rec name </field>
+        <field name="name">Rec name</field>
         <field name="code">purchase.request.name.sequence</field>
         <field name="prefix">P</field>
         <field name="padding">3</field>
@@ -16,7 +16,7 @@
     <record id="seq_order_purchase_name" model="ir.sequence">
         <field name="name">Rec name</field>
         <field name="code">purchase.order.name.sequence</field>
-        <field name="prefix">P</field>
+        <field name="prefix">Pr</field>
         <field name="padding">3</field>
         <field name="company_id" eval="False"></field>
     </record>
@@ -59,6 +59,9 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="bills_smart_button" string="Bills"
+                                icon="fa-archive">
+                        </button>
                         <button class="oe_stat_button" type="object" name="orders_smart_button" string="Orders"
                                 icon="fa-calendar">
                         </button>
@@ -85,31 +88,120 @@
                                    attrs="{'invisible':[ ('state', '!=', 'reject') ], 'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
 
                         </group>
-
-                        <notebook>
-                            <page string="Lines">
-
-                                <field name="order_lines"
-                                       attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}">
-                                    <tree>
-                                        <field name="product_id"/>
-                                        <field name="description"/>
-                                        <field name="quantity"/>
-                                        <field name="price_unit"/>
-                                        <field name="total" readonly='1' force_save='1'/>
-                                    </tree>
-                                </field>
-                                <group>
-                                    <field name="total_price"
-                                           attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}"/>
-                                </group>
-                            </page>
-                        </notebook>
                     </group>
+                    <notebook>
+                        <page string="Lines">
+
+                            <field name="order_lines" widget="section_and_note_one2many" mode="tree,kanban"
+                                   attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}">
+                                <tree editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="description"/>
+                                    <field name="quantity"/>
+                                    <field name="price_unit"/>
+                                    <field name="total" readonly='1' force_save='1'/>
+                                </tree>
+                            </field>
+                            <group class="oe_subtotal_footer oe_right">
+                                <field name="total_price"
+                                       attrs="{'readonly': [('state', 'in', ('cancel', 'reject', 'approve'))]}" force_save='1' />
+                            </group>
+
+                        </page>
+                    </notebook>
+
                 </sheet>
             </form>
         </field>
     </record>
+    <record id="purchase_request_kanban_view" model="ir.ui.view">
+        <field name="name">purchase.request.kanban</field>
+        <field name="model">purchase.request</field>
+        <field name="arch" type="xml">
+            <kanban sample="1">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="total_price"/>
+                <field name="state"/>
+                <field name="company_id"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_card oe_kanban_global_click">
+                            <div class="row mb4">
+                                <div class="col-9">
+                                    <div>
+                                        <h4>
+                                            <t t-esc="record.name.value"/>
+                                        </h4>
+                                    </div>
+                                    <div>
+                                        <t t-esc="record.partner_id.value"/>
+                                    </div>
+                                </div>
+                                <div class="col-3 text-right">
+                                    <t t-esc="record.state.value"/>
+                                </div>
+                            </div>
+                            <div class="row mb2">
+                                <div class="col-8">
 
+                                    <div>
+                                        <strong>
+                                            <span>
+                                                Start date:
+                                            </span>
+                                        </strong>
+                                        <span>
+                                            <t t-esc="record.start_date.value"/>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <strong>
+                                            <span>
+                                                End date:
+                                            </span>
+                                        </strong>
+
+                                        <span>
+                                            <t t-esc="record.end_date.value"/>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-4 text-right">
+
+                                    <div>
+                                        <strong>
+                                            <span>
+                                                Total:
+                                            </span>
+                                        </strong>
+                                        <span>
+                                            <t t-esc="record.total_price.value"/>
+                                        </span>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+
+        </field>
+    </record>
+
+        <record id="purchase_request_pivot_view" model="ir.ui.view">
+            <field name="name">Purchase Request Pivot</field>
+            <field name="model">purchase.request</field>
+            <field name="arch" type="xml">
+                <pivot string="Purchase Request" display_quantity='True' >
+                    <field name="partner_id" type="row"/>
+                    <field name="total_price" type="measure"/>
+                </pivot>
+            </field>
+        </record>
 
 </odoo>
