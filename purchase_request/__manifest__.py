@@ -4,6 +4,7 @@
     'category': 'Inventory/Purchase',
     'depends': [
         'purchase',
+        'auth_signup'
     ],
     'data': [
         'security/ir.model.access.csv',
@@ -12,6 +13,7 @@
         'report/purchase_request_report_template.xml',
         'report/purchase_request_reports.xml',
         'views/purchase_request.xml',
+        'views/signup.xml',
         'views/purchase_order.xml',
         'views/menus.xml',
 
