@@ -13,7 +13,6 @@
         'report/purchase_request_report_template.xml',
         'report/purchase_request_reports.xml',
         'views/purchase_request.xml',
-        'views/signup.xml',
         'views/purchase_order.xml',
         'views/menus.xml',
 

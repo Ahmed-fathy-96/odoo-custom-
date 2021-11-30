@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="signup_fields" inherit_id="auth_signup.fields" name="Auth Signup street form field">
+        <xpath expr="//div[last()]" position="after">
+            <div class="form-group field-login">
+                <label for="age">Age</label>
+                <input type="number" name="age" id="age" class="form-control form-control-sm"/>
+            </div>
+        </xpath>
+    </template>
+
+
+    <template id="my_acount_fields" inherit_id="portal.portal_my_details">
+        <xpath expr="//div[@class='row']/div[last()]" position="after">
+            <div t-attf-class="form-group #{error.get('age') and 'o_has_error' or ''} col-xl-6">
+                <label class="col-form-label" for="age">Age</label>
+                <input type="number" name="age" t-attf-class="form-control #{error.get('age') and 'is-invalid' or ''}"
+                       t-att-value="age or partner.age"/>
+            </div>
+        </xpath>
+    </template>
+
+    <record id="users_views_list_with_age" model="ir.ui.view">
+        <field name="name">users list</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='login']" position="after">
+                <field name="age"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="users_views_from_with_age" model="ir.ui.view">
+        <field name="name">users from</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="age"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
