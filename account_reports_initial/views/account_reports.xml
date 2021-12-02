@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<!--    <record id="action_account_report_general_ledger" model="ir.actions.client">-->
+<!--        <field name="name">General Ledger</field>-->
+<!--        <field name="tag">account_report</field>-->
+<!--        <field name="context" eval="{'model': 'account.general.ledger'}"/>-->
+<!--    </record>-->
+
+    <template id="search_template_extra_options_initial" inherit_id="account_reports.search_template_extra_options">
+        <xpath expr="//div[last()]/a[last()]" position="after">
+            <a role="menuitem" class="dropdown-item js_account_report_bool_filter"
+               t-if="options.get('initial_balance') != None" title="Initial" data-filter="initial_balance">
+                Initial Balance
+            </a>
+        </xpath>
+    </template>
+
+</odoo>
