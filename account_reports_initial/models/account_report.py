@@ -22,14 +22,15 @@ class AccountGeneralLedgerReportExt(models.AbstractModel):
         aml_lines = []
         options_list = self._get_options_periods_list(options)
         unfold_all = options.get('unfold_all') or (self._context.get('print_mode') and not options['unfolded_lines'])
+        # initial  balance option
         initial_balance = options.get('initial_balance') or None
         date_from = fields.Date.from_string(options['date']['date_from'])
         company_currency = self.env.company.currency_id
-
         expanded_account = line_id and self.env['account.account'].browse(int(line_id[8:]))
         accounts_results, taxes_results = self._do_query(options_list, expanded_account=expanded_account)
 
         total_debit = total_credit = total_balance = 0.0
+        total_initial_debit = total_initial_credit = total_initial_balance = 0.0
         for account, periods_results in accounts_results:
             # No comparison allowed in the General Ledger. Then, take only the first period.
             results = periods_results[0]
@@ -39,26 +40,41 @@ class AccountGeneralLedgerReportExt(models.AbstractModel):
             # account.account record line.
             account_sum = results.get('sum', {})
             account_un_earn = results.get('unaffected_earnings', {})
+            account_init_bal = results.get('initial_balance', {})
 
             # Check if there is sub-lines for the current period.
             max_date = account_sum.get('max_date')
             has_lines = max_date and max_date >= date_from or False
 
-            amount_currency = account_sum.get('amount_currency', 0.0) + account_un_earn.get('amount_currency', 0.0)
-            debit = account_sum.get('debit', 0.0) + account_un_earn.get('debit', 0.0)
-            credit = account_sum.get('credit', 0.0) + account_un_earn.get('credit', 0.0)
-            balance = account_sum.get('balance', 0.0) + account_un_earn.get('balance', 0.0)
+            # calculation of the sum of line with initial or without
+            # check the initial balance option
+            if initial_balance:
+                amount_currency = account_sum.get('amount_currency', 0.0) + account_un_earn.get('amount_currency', 0.0)
+                debit = account_sum.get('debit', 0.0) + account_un_earn.get('debit', 0.0)
+                credit = account_sum.get('credit', 0.0) + account_un_earn.get('credit', 0.0)
+                balance = account_sum.get('balance', 0.0) + account_un_earn.get('balance', 0.0)
+            else:
 
+                amount_currency = account_sum.get('amount_currency', 0.0) + account_un_earn.get('amount_currency', 0.0) - account_init_bal.get(
+                    'amount_currency', 0.0)
+                debit = account_sum.get('debit', 0.0) + account_un_earn.get('debit', 0.0) - account_init_bal.get(
+                    'debit', 0.0)
+                credit = account_sum.get('credit', 0.0) + account_un_earn.get('credit', 0.0) - account_init_bal.get(
+                    'credit', 0.0)
+                balance = account_sum.get('balance', 0.0) + account_un_earn.get('balance', 0.0) - account_init_bal.get(
+                    'balance',
+                    0.0)
+            # add title line
             lines.append(
                 self._get_account_title_line(options, account, amount_currency, debit, credit, balance, has_lines))
             total_debit += debit
             total_credit += credit
             total_balance += balance
 
+            # check if there are lines
             if has_lines and (unfold_all or is_unfolded):
                 # Initial balance line.
                 if initial_balance:
-                    account_init_bal = results.get('initial_balance', {})
                     cumulated_balance = account_init_bal.get('balance', 0.0) + account_un_earn.get('balance', 0.0)
                     lines.append(self._get_initial_balance_line(
                         options, account,
@@ -68,7 +84,6 @@ class AccountGeneralLedgerReportExt(models.AbstractModel):
                         cumulated_balance,
                     ))
                 else:
-                    account_init_bal = results.get('initial_balance', {})
                     cumulated_balance = account_init_bal.get('balance', 0.0)
 
                 # account.move.line record lines.
@@ -77,12 +92,16 @@ class AccountGeneralLedgerReportExt(models.AbstractModel):
                 load_more_remaining = len(amls)
                 load_more_counter = self._context.get('print_mode') and load_more_remaining or self.MAX_LINES
 
-                for aml in amls:
+                # loop for account lines
+                for i, aml in enumerate(amls):
                     # Don't show more line than load_more_counter.
                     if load_more_counter == 0:
                         break
+                    if i == 0 and not initial_balance:
+                        cumulated_balance = aml['balance']
+                    else:
+                        cumulated_balance += aml['balance']
 
-                    cumulated_balance += aml['balance']
                     lines.append(self._get_aml_line(options, account, aml, company_currency.round(cumulated_balance)))
 
                     load_more_remaining -= 1
@@ -98,15 +117,30 @@ class AccountGeneralLedgerReportExt(models.AbstractModel):
                         cumulated_balance,
                     ))
 
+                # totals without initial balance
+                total_initial_debit += account_init_bal.get('debit', 0.0)
+                total_initial_credit += account_init_bal.get('credit', 0.0)
+                total_initial_balance += account_init_bal.get('balance', 0.0)
+
                 if self.env.company.totals_below_sections:
                     # Account total line.
-                    lines.append(self._get_account_total_line(
-                        options, account,
-                        account_sum.get('amount_currency', 0.0),
-                        account_sum.get('debit', 0.0),
-                        account_sum.get('credit', 0.0),
-                        account_sum.get('balance', 0.0),
-                    ))
+                    #check the initial balance
+                    if not initial_balance:
+                        lines.append(self._get_account_total_line(
+                            options, account,
+                            account_sum.get('amount_currency', 0.0) - account_init_bal.get('amount_currency', 0.0),
+                            account_sum.get('debit', 0.0) - account_init_bal.get('debit', 0.0),
+                            account_sum.get('credit', 0.0) - account_init_bal.get('credit', 0.0),
+                            account_sum.get('balance', 0.0) - account_init_bal.get('balance', 0.0),
+                        ))
+                    else:
+                        lines.append(self._get_account_total_line(
+                            options, account,
+                            account_sum.get('amount_currency', 0.0),
+                            account_sum.get('debit', 0.0),
+                            account_sum.get('credit', 0.0),
+                            account_sum.get('balance', 0.0),
+                        ))
 
         if not line_id:
             # Report total line.
@@ -125,49 +159,181 @@ class AccountGeneralLedgerReportExt(models.AbstractModel):
                 )
         if self.env.context.get('aml_only'):
             return aml_lines
-        # print("lines = ", lines)
         return lines
 
-    # @api.model
-    # def _get_account_title_line(self, options, account, amount_currency, debit, credit, balance, has_lines):
-    #     has_foreign_currency = account.currency_id and account.currency_id != account.company_id.currency_id or False
-    #     unfold_all = self._context.get('print_mode') and not options.get('unfolded_lines')
-    #
-    #     name = '%s %s' % (account.code, account.name)
-    #     max_length = self._context.get('print_mode') and 100 or 60
-    #     if len(name) > max_length and not self._context.get('no_format'):
-    #         name = name[:max_length] + '...'
-    #     columns = [
-    #         {'name': self.format_value(debit), 'class': 'number'},
-    #         {'name': self.format_value(credit), 'class': 'number'},
-    #         {'name': self.format_value(balance), 'class': 'number'},
-    #     ]
-    #     if self.user_has_groups('base.group_multi_currency'):
-    #         columns.insert(0, {
-    #             'name': has_foreign_currency and self.format_value(amount_currency, currency=account.currency_id,
-    #                                                                blank_if_zero=True) or '', 'class': 'number'})
-    #     print("account_title = ", {
-    #         'id': 'account_%d' % account.id,
-    #         'name': name,
-    #         'title_hover': name,
-    #         'columns': columns,
-    #         'level': 2,
-    #         'unfoldable': has_lines,
-    #         'unfolded': has_lines and 'account_%d' % account.id in options.get('unfolded_lines') or unfold_all,
-    #         'colspan': 4,
-    #         'class': 'o_account_reports_totals_below_sections' if self.env.company.totals_below_sections else '',
-    #     })
-    #     return {
-    #         'id': 'account_%d' % account.id,
-    #         'name': name,
-    #         'title_hover': name,
-    #         'columns': columns,
-    #         'level': 2,
-    #         'unfoldable': has_lines,
-    #         'unfolded': has_lines and 'account_%d' % account.id in options.get('unfolded_lines') or unfold_all,
-    #         'colspan': 4,
-    #         'class': 'o_account_reports_totals_below_sections' if self.env.company.totals_below_sections else '',
-    #     }
+    @api.model
+    def _get_query_sums(self, options_list, expanded_account=None):
+        ''' Construct a query retrieving all the aggregated sums to build the report. It includes:
+        - sums for all accounts.
+        - sums for the initial balances.
+        - sums for the unaffected earnings.
+        - sums for the tax declaration.
+        :param options_list:        The report options list, first one being the current dates range, others being the
+                                    comparisons.
+        :param expanded_account:    An optional account.account record that must be specified when expanding a line
+                                    with of without the load more.
+        :return:                    (query, params)
+        '''
+        options = options_list[0]
+        unfold_all = options.get('unfold_all') or (self._context.get('print_mode') and not options['unfolded_lines'])
+
+        params = []
+        queries = []
+
+        # Create the currency table.
+        # As the currency table is the same whatever the comparisons, create it only once.
+        ct_query = self.env['res.currency']._get_query_currency_table(options)
+
+        # ============================================
+        # 1) Get sums for all accounts.
+        # ============================================
+
+        domain = [('account_id', '=', expanded_account.id)] if expanded_account else []
+        for i, options_period in enumerate(options_list):
+            # The period domain is expressed as:
+            # [
+            #   ('date' <= options['date_to']),
+            #   '|',
+            #   ('date' >= fiscalyear['date_from']),
+            #   ('account_id.user_type_id.include_initial_balance', '=', True),
+            # ]
+
+            new_options = self._get_options_sum_balance(options_period)
+            tables, where_clause, where_params = self._query_get(new_options, domain=domain)
+            params += where_params
+            queries.append('''
+                SELECT
+                    account_move_line.account_id                            AS groupby,
+                    'sum'                                                   AS key,
+                    MAX(account_move_line.date)                             AS max_date,
+                    %s                                                      AS period_number,
+                    COALESCE(SUM(account_move_line.amount_currency), 0.0)   AS amount_currency,
+                    SUM(ROUND(account_move_line.debit * currency_table.rate, currency_table.precision))   AS debit,
+                    SUM(ROUND(account_move_line.credit * currency_table.rate, currency_table.precision))  AS credit,
+                    SUM(ROUND(account_move_line.balance * currency_table.rate, currency_table.precision)) AS balance
+                FROM %s
+                LEFT JOIN %s ON currency_table.company_id = account_move_line.company_id
+                WHERE %s
+                GROUP BY account_move_line.account_id
+            ''' % (i, tables, ct_query, where_clause))
+
+        # ============================================
+        # 2) Get sums for the unaffected earnings.
+        # ============================================
+
+        domain = [('account_id.user_type_id.include_initial_balance', '=', False)]
+        if expanded_account:
+            domain.append(('company_id', '=', expanded_account.company_id.id))
+
+        # Compute only the unaffected earnings for the oldest period.
+
+        i = len(options_list) - 1
+        options_period = options_list[-1]
+
+        # The period domain is expressed as:
+        # [
+        #   ('date' <= fiscalyear['date_from'] - 1),
+        #   ('account_id.user_type_id.include_initial_balance', '=', False),
+        # ]
+
+        new_options = self._get_options_unaffected_earnings(options_period)
+        tables, where_clause, where_params = self._query_get(new_options, domain=domain)
+        params += where_params
+        queries.append('''
+            SELECT
+                account_move_line.company_id                            AS groupby,
+                'unaffected_earnings'                                   AS key,
+                NULL                                                    AS max_date,
+                %s                                                      AS period_number,
+                COALESCE(SUM(account_move_line.amount_currency), 0.0)   AS amount_currency,
+                SUM(ROUND(account_move_line.debit * currency_table.rate, currency_table.precision))   AS debit,
+                SUM(ROUND(account_move_line.credit * currency_table.rate, currency_table.precision))  AS credit,
+                SUM(ROUND(account_move_line.balance * currency_table.rate, currency_table.precision)) AS balance
+            FROM %s
+            LEFT JOIN %s ON currency_table.company_id = account_move_line.company_id
+            WHERE %s
+            GROUP BY account_move_line.company_id
+        ''' % (i, tables, ct_query, where_clause))
+
+        # ============================================
+        # 3) Get sums for the initial balance.
+        # ============================================
+        domain = None
+        if expanded_account:
+            domain = [('account_id', '=', expanded_account.id)]
+        elif unfold_all:
+            domain = []
+        elif options['unfolded_lines']:
+            domain = [('account_id', 'in', [int(line[8:]) for line in options['unfolded_lines']])]
+        # if domain is not None:
+        for i, options_period in enumerate(options_list):
+            # The period domain is expressed as:
+            # [
+            #   ('date' <= options['date_from'] - 1),
+            #   '|',
+            #   ('date' >= fiscalyear['date_from']),
+            #   ('account_id.user_type_id.include_initial_balance', '=', True)
+            # ]
+
+            new_options = self._get_options_initial_balance(options_period)
+            tables, where_clause, where_params = self._query_get(new_options, domain=domain)
+            params += where_params
+            queries.append('''
+                SELECT
+                    account_move_line.account_id                            AS groupby,
+                    'initial_balance'                                       AS key,
+                    NULL                                                    AS max_date,
+                    %s                                                      AS period_number,
+                    COALESCE(SUM(account_move_line.amount_currency), 0.0)   AS amount_currency,
+                    SUM(ROUND(account_move_line.debit * currency_table.rate, currency_table.precision))   AS debit,
+                    SUM(ROUND(account_move_line.credit * currency_table.rate, currency_table.precision))  AS credit,
+                    SUM(ROUND(account_move_line.balance * currency_table.rate, currency_table.precision)) AS balance
+                FROM %s
+                LEFT JOIN %s ON currency_table.company_id = account_move_line.company_id
+                WHERE %s
+                GROUP BY account_move_line.account_id
+            ''' % (i, tables, ct_query, where_clause))
+
+        # ============================================
+        # 4) Get sums for the tax declaration.
+        # ============================================
+
+        journal_options = self._get_options_journals(options)
+        if not expanded_account and len(journal_options) == 1 and journal_options[0]['type'] in ('sale', 'purchase'):
+            for i, options_period in enumerate(options_list):
+                tables, where_clause, where_params = self._query_get(options_period)
+                params += where_params + where_params
+                queries += ['''
+                    SELECT
+                        tax_rel.account_tax_id                  AS groupby,
+                        'base_amount'                           AS key,
+                        NULL                                    AS max_date,
+                        %s                                      AS period_number,
+                        0.0                                     AS amount_currency,
+                        0.0                                     AS debit,
+                        0.0                                     AS credit,
+                        SUM(ROUND(account_move_line.balance * currency_table.rate, currency_table.precision)) AS balance
+                    FROM account_move_line_account_tax_rel tax_rel, %s
+                    LEFT JOIN %s ON currency_table.company_id = account_move_line.company_id
+                    WHERE account_move_line.id = tax_rel.account_move_line_id AND %s
+                    GROUP BY tax_rel.account_tax_id
+                ''' % (i, tables, ct_query, where_clause), '''
+                    SELECT
+                    account_move_line.tax_line_id               AS groupby,
+                    'tax_amount'                                AS key,
+                        NULL                                    AS max_date,
+                        %s                                      AS period_number,
+                        0.0                                     AS amount_currency,
+                        0.0                                     AS debit,
+                        0.0                                     AS credit,
+                        SUM(ROUND(account_move_line.balance * currency_table.rate, currency_table.precision)) AS balance
+                    FROM %s
+                    LEFT JOIN %s ON currency_table.company_id = account_move_line.company_id
+                    WHERE %s
+                    GROUP BY account_move_line.tax_line_id
+                ''' % (i, tables, ct_query, where_clause)]
+
+        return ' UNION ALL '.join(queries), params
 
 
 class AccountChartOfAccountReportExt(models.AbstractModel):
@@ -295,121 +461,3 @@ class AccountChartOfAccountReportExt(models.AbstractModel):
 
         line['columns'] = cols[2:]
         return line
-
-
-account_title = {'id': 'account_6', 'name': '121000 Account Receivable', 'title_hover': '121000 Account Receivable',
-                 'columns': [
-                     {'name': '$ 1,043,625.00', 'class': 'number'},
-                     {'name': '$ 0.00', 'class': 'number'},
-                     {'name': '$ 1,043,625.00', 'class': 'number'}
-                 ], 'level': 2, 'unfoldable': True,
-                 'unfolded': True, 'colspan': 4, 'class': 'o_account_reports_totals_below_sections'}
-
-lines = [{'id': 'account_40', 'name': '101401 Bank', 'title_hover': '101401 Bank',
-          'columns': [
-              {'name': '$ 4,874.45', 'class': 'number'},
-              {'name': '$ 32.58', 'class': 'number'},
-              {'name': '$ 4,841.87', 'class': 'number'}
-          ]
-             , 'level': 2, 'unfoldable': False, 'unfolded': None,
-          'colspan': 4, 'class': 'o_account_reports_totals_below_sections'},
-         {'id': 'account_36', 'name': '101702 Bank Suspense Account', 'title_hover': '101702 Bank Suspense Account',
-          'columns': [{'name': '$ 32.58', 'class': 'number'}, {'name': '$ 4,874.45', 'class': 'number'},
-                      {'name': '$ -4,841.87', 'class': 'number'}], 'level': 2, 'unfoldable': False, 'unfolded': None,
-          'colspan': 4, 'class': 'o_account_reports_totals_below_sections'},
-         {'id': 'account_6', 'name': '121000 Account Receivable', 'title_hover': '121000 Account Receivable',
-          'columns': [
-              {'name': '$ 1,043,625.00', 'class': 'number'},
-              {'name': '$ 0.00', 'class': 'number'},
-              {'name': '$ 1,043,625.00', 'class': 'number'}
-          ], 'level': 2, 'unfoldable': True, 'unfolded': True,
-          'colspan': 4, 'class': 'o_account_reports_totals_below_sections'},
-         {'id': 'initial_6', 'class': 'o_account_reports_initial_balance', 'name': 'Initial Balance',
-          'parent_id': 'account_6',
-          'columns': [{'name': '$ 365,125.00', 'class': 'number'},
-                      {'name': '$ 0.00', 'class': 'number'},
-                      {'name': '$ 365,125.00', 'class': 'number'}], 'colspan': 4},
-         {'id': 17, 'caret_options': 'account.move', 'class': 'top-vertical-align', 'parent_id': 'account_6',
-          'name': 'INV/2021/12/0001',
-          'columns': [{'name': '12/01/2021', 'class': 'date'},
-                      {'name': 'INV/2021/12/0001', 'title': 'INV/2021/12/0001',
-                       'class': 'whitespace_print o_account_report_line_ellipsis'},
-                      {'name': 'Azure Interior', 'title': 'Azure Interior',
-                       'class': 'whitespace_print'},
-                      {'name': '$ 365,125.00', 'class': 'number'},
-                      {'name': '', 'class': 'number'},
-                      {'name': '$ 730,250.00', 'class': 'number'}], 'level': 2},
-         {'id': 20, 'caret_options': 'account.move', 'class': 'top-vertical-align', 'parent_id': 'account_6',
-          'name': 'INV/2021/12/0002', 'columns': [{'name': '12/08/2021', 'class': 'date'},
-                                                  {'name': 'INV/2021/12/0002', 'title': 'INV/2021/12/0002',
-                                                   'class': 'whitespace_print o_account_report_line_ellipsis'},
-                                                  {'name': 'Deco Addict', 'title': 'Deco Addict',
-                                                   'class': 'whitespace_print'},
-                                                  {'name': '$ 169,625.00', 'class': 'number'},
-                                                  {'name': '', 'class': 'number'},
-                                                  {'name': '$ 899,875.00', 'class': 'number'}], 'level': 2},
-         {'id': 23, 'caret_options': 'account.move', 'class': 'top-vertical-align', 'parent_id': 'account_6',
-          'name': 'INV/2021/12/0003', 'columns': [{'name': '12/08/2021', 'class': 'date'},
-                                                  {'name': 'INV/2021/12/0003', 'title': 'INV/2021/12/0003',
-                                                   'class': 'whitespace_print o_account_report_line_ellipsis'},
-                                                  {'name': 'Deco Addict', 'title': 'Deco Addict',
-                                                   'class': 'whitespace_print'},
-                                                  {'name': '$ 143,750.00', 'class': 'number'},
-                                                  {'name': '', 'class': 'number'},
-                                                  {'name': '$ 1,043,625.00', 'class': 'number'}], 'level': 2},
-         {'id': 'total_6', 'class': 'o_account_reports_domain_total', 'parent_id': 'account_6',
-          'name': 'Total 121000 Account Receivable',
-          'columns': [{'name': '$ 1,043,625.00', 'class': 'number'}, {'name': '$ 0.00', 'class': 'number'},
-                      {'name': '$ 1,043,625.00', 'class': 'number'}], 'colspan': 4},
-         {'id': 'account_14', 'name': '211000 Account Payable', 'title_hover': '211000 Account Payable',
-          'columns': [{'name': '$ 0.00', 'class': 'number'}, {'name': '$ 541.10', 'class': 'number'},
-                      {'name': '$ -541.10', 'class': 'number'}], 'level': 2, 'unfoldable': False, 'unfolded': None,
-          'colspan': 4, 'class': 'o_account_reports_totals_below_sections'},
-         {'id': 'account_16', 'name': '251000 Tax Received', 'title_hover': '251000 Tax Received',
-          'columns': [{'name': '$ 0.00', 'class': 'number'}, {'name': '$ 136,125.00', 'class': 'number'},
-                      {'name': '$ -136,125.00', 'class': 'number'}], 'level': 2, 'unfoldable': True, 'unfolded': True,
-          'colspan': 4, 'class': 'o_account_reports_totals_below_sections'},
-         {'id': 'initial_16', 'class': 'o_account_reports_initial_balance', 'name': 'Initial Balance',
-          'parent_id': 'account_16',
-          'columns': [{'name': '$ 0.00', 'class': 'number'}, {'name': '$ 47,625.00', 'class': 'number'},
-                      {'name': '$ -47,625.00', 'class': 'number'}], 'colspan': 4},
-         {'id': 32, 'caret_options': 'account.move', 'class': 'top-vertical-align', 'parent_id': 'account_16',
-          'name': 'INV/2021/12/0001', 'columns': [{'name': '12/01/2021', 'class': 'date'},
-                                                  {'name': 'INV/2021/12/0001-Tax 15.00%', 'title': 'Tax 15.00%',
-                                                   'class': 'whitespace_print o_account_report_line_ellipsis'},
-                                                  {'name': 'Azure Interior', 'title': 'Azure Interior',
-                                                   'class': 'whitespace_print'}, {'name': '', 'class': 'number'},
-                                                  {'name': '$ 47,625.00', 'class': 'number'},
-                                                  {'name': '$ -95,250.00', 'class': 'number'}], 'level': 2},
-         {'id': 33, 'caret_options': 'account.move', 'class': 'top-vertical-align', 'parent_id': 'account_16',
-          'name': 'INV/2021/12/0002', 'columns': [{'name': '12/08/2021', 'class': 'date'},
-                                                  {'name': 'INV/2021/12/0002-Tax 15.00%', 'title': 'Tax 15.00%',
-                                                   'class': 'whitespace_print o_account_report_line_ellipsis'},
-                                                  {'name': 'Deco Addict', 'title': 'Deco Addict',
-                                                   'class': 'whitespace_print'}, {'name': '', 'class': 'number'},
-                                                  {'name': '$ 22,125.00', 'class': 'number'},
-                                                  {'name': '$ -117,375.00', 'class': 'number'}], 'level': 2},
-         {'id': 34, 'caret_options': 'account.move', 'class': 'top-vertical-align', 'parent_id': 'account_16',
-          'name': 'INV/2021/12/0003', 'columns': [{'name': '12/08/2021', 'class': 'date'},
-                                                  {'name': 'INV/2021/12/0003-Tax 15.00%', 'title': 'Tax 15.00%',
-                                                   'class': 'whitespace_print o_account_report_line_ellipsis'},
-                                                  {'name': 'Deco Addict', 'title': 'Deco Addict',
-                                                   'class': 'whitespace_print'}, {'name': '', 'class': 'number'},
-                                                  {'name': '$ 18,750.00', 'class': 'number'},
-                                                  {'name': '$ -136,125.00', 'class': 'number'}], 'level': 2},
-         {'id': 'total_16', 'class': 'o_account_reports_domain_total', 'parent_id': 'account_16',
-          'name': 'Total 251000 Tax Received',
-          'columns': [{'name': '$ 0.00', 'class': 'number'}, {'name': '$ 136,125.00', 'class': 'number'},
-                      {'name': '$ -136,125.00', 'class': 'number'}], 'colspan': 4},
-         {'id': 'account_21', 'name': '400000 Product Sales', 'title_hover': '400000 Product Sales',
-          'columns': [{'name': '$ 0.00', 'class': 'number'}, {'name': '$ 907,500.00', 'class': 'number'},
-                      {'name': '$ -907,500.00', 'class': 'number'}], 'level': 2, 'unfoldable': True, 'unfolded': None,
-          'colspan': 4, 'class': 'o_account_reports_totals_below_sections'},
-         {'id': 'account_43', 'name': '999999 Undistributed Profits/Losses',
-          'title_hover': '999999 Undistributed Profits/Losses',
-          'columns': [{'name': '$ 541.10', 'class': 'number'}, {'name': '$ 0.00', 'class': 'number'},
-                      {'name': '$ 541.10', 'class': 'number'}], 'level': 2, 'unfoldable': False, 'unfolded': None,
-          'colspan': 4, 'class': 'o_account_reports_totals_below_sections'},
-         {'id': 'general_ledger_total_1', 'name': 'Total', 'class': 'total', 'level': 1,
-          'columns': [{'name': '$ 1,049,073.13', 'class': 'number'}, {'name': '$ 1,049,073.13', 'class': 'number'},
-                      {'name': '$ 0.00', 'class': 'number'}], 'colspan': 4}]

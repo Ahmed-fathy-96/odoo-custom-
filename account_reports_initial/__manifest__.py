@@ -5,6 +5,7 @@
         'account_reports',
     ],
     'data': [
+        'views/assets.xml',
         'views/account_reports.xml',
     ],
 }
