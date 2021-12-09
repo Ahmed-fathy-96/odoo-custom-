@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_inherit_test_discount" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.test.discount</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='invoicing_settings']" position="after">
+                <h2>Customer Discount</h2>
+                <div class="row mt16 o_settings_container" id="customer_discount">
+                    <div class="col-12 col-lg-6 o_setting_box">
+                        <div class="o_setting_right_pane">
+                            <span class="o_form_label">Allowed Discount Account</span>
+                            <div class="text-muted">
+                                <field name="allowed_discount_account"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6 o_setting_box">
+                        <div class="o_setting_right_pane">
+                            <span class="o_form_label">Allowed Discount Product</span>
+                            <div class="text-muted">
+                                <field name="allowed_discount_product"/>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="res_partner_view_form_inherit_test_discount" model="ir.ui.view">
+        <field name="name">res.partner.view.form.inherit.test.discount</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='vat']" position="before">
+                <field name="allowed_discount"/>
+            </xpath>
+        </field>
+    </record>
+
+
+</odoo>
