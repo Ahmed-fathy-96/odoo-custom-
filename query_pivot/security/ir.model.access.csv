@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_product_analysis_pvo,product.analysis.pvo,model_product_analysis_pvo,,1,1,1,1

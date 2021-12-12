@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="pivot_product_sale_analysis_action" model="ir.actions.act_window">
+            <field name="name">Product Sale Analysis</field>
+            <field name="res_model">product.analysis.pvo</field>
+            <field name="view_mode">pivot</field>
+        </record>
+        <record id="product_sale_analysis_pivot_view" model="ir.ui.view">
+            <field name="name">Product Sale Analysis Pivot</field>
+            <field name="model">product.analysis.pvo</field>
+            <field name="arch" type="xml">
+                <pivot string="Product Sale Analysis" >
+                    <field name="product_id" type="row"/>
+                    <field name="date" type="row"/>
+                    <field name="type" type="col"/>
+                    <field name="quantity" type="measure"/>
+                    <field name="untaxed_total" type="measure"/>
+                    <field name="total" type="measure"/>
+                </pivot>
+            </field>
+        </record>
+        <menuitem id="pivot_product_sale_analysis" name="Pivot Product sale" action="pivot_product_sale_analysis_action"/>
+    </data>
+</odoo>
