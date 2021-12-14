@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Account Financial Report Assets -->
+        <template id="account_reports_initial_backend" inherit_id="point_of_sale.assets" >
+            <xpath expr="." position="inside">
+                <script type="text/javascript" src="/pos_custom/static/src/js/product_limit.js"></script>
+            </xpath>
+        </template>
+    </data>
+</odoo>
